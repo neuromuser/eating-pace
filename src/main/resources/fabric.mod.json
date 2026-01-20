@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "eatingpace",
+	"version": "${version}",
+	"name": "Eating Pace",
+	"description": "My vision on how eating food in Minecraft should be.",
+	"authors": [
+		"Neuromuser"
+	],
+	"contact": {
+		"homepage": "https://github.com/neuromuser",
+		"sources": "https://github.com/neuromuser/eating-pace"
+	},
+	"license": "MIT",
+	"icon": "assets/eatingpace/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.neuromuser.eatingpace.EatingPace"
+		],
+		"client": [
+			"com.neuromuser.eatingpace.EatingPaceClient"
+		]
+	},
+	"mixins": [
+		"eatingpace.mixins.json",
+		{
+			"config": "eatingpace.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	}
+}
