@@ -14,6 +14,9 @@
 	"license": "MIT",
 	"icon": "assets/eatingpace/icon.png",
 	"environment": "*",
+
+	"accessWidener": "eatingpace.accesswidener",
+
 	"entrypoints": {
 		"main": [
 			"com.neuromuser.eatingpace.EatingPace"

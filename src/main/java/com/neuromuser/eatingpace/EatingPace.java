@@ -1,5 +1,6 @@
 package com.neuromuser.eatingpace;
 
+import com.neuromuser.eatingpace.config.ModifiedFoods;
 import net.fabricmc.api.ModInitializer;
 
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ public class EatingPace implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		int modifiedCount = ModifiedFoods.getAllCustomFoods().size();
+		LOGGER.info("Successfully registered {} custom food overrides.", modifiedCount);
 	}
 }
