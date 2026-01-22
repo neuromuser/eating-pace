@@ -1,6 +1,9 @@
 package com.neuromuser.eatingpace.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.neuromuser.eatingpace.EatingPace;
+import com.neuromuser.eatingpace.config.CustomFoodComponent;
+import com.neuromuser.eatingpace.config.ModifiedFoods;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -14,23 +17,7 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
     private static final int CIRCLE_OUTER_RADIUS = 10;
     private static final int CIRCLE_INNER_RADIUS = 5;
     private static final int CIRCLE_SEGMENTS = 40;
-
     private static final int OUTLINE_WIDTH = 1;
-
-    private static final int EMPTY_R = 255;
-    private static final int EMPTY_G = 80;
-    private static final int EMPTY_B = 80;
-    private static final int EMPTY_A = 0;
-
-    private static final int FILL_R = 80;
-    private static final int FILL_G = 255;
-    private static final int FILL_B = 80;
-    private static final int FILL_A = 240;
-
-    private static final int OUTLINE_R = 220;
-    private static final int OUTLINE_G = 220;
-    private static final int OUTLINE_B = 220;
-    private static final int OUTLINE_A = 220;
 
     @Override
     public void onHudRender(DrawContext drawContext, float tickDelta) {
@@ -42,7 +29,7 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
         ItemStack usingItem = player.getActiveItem();
         if (!usingItem.isFood()) return;
 
-        int maxUseTicks = usingItem.getMaxUseTime();
+        int maxUseTicks = getServerSideMaxUseTime(usingItem);
         int usedTicks = player.getItemUseTimeLeft();
         float progress = 1.0f - ((float) usedTicks / maxUseTicks);
 
@@ -55,44 +42,25 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
         MatrixStack matrices = drawContext.getMatrices();
         matrices.push();
 
-        drawDonutSegment(
-                matrices,
-                centerX, centerY,
-                CIRCLE_INNER_RADIUS,
-                CIRCLE_OUTER_RADIUS,
-                0f, 360f,
-                EMPTY_R, EMPTY_G, EMPTY_B, EMPTY_A
-        );
+        // Draw empty donut (red)
+        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 80, 0);
 
+        // Draw progress donut (green)
         if (progress > 0f) {
-            drawDonutSegment(
-                    matrices,
-                    centerX, centerY,
-                    CIRCLE_INNER_RADIUS,
-                    CIRCLE_OUTER_RADIUS,
-                    -90f,
-                    -90f + (360f * progress),
-                    FILL_R, FILL_G, FILL_B, FILL_A
-            );
+            drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 80, 240);
         }
 
-        drawOutline(
-                matrices,
-                centerX, centerY,
-                CIRCLE_INNER_RADIUS,
-                CIRCLE_OUTER_RADIUS,
-                OUTLINE_WIDTH,
-                OUTLINE_R, OUTLINE_G, OUTLINE_B, OUTLINE_A
-        );
+        // Draw outline (gray)
+        drawOutline(matrices, centerX, centerY);
 
         matrices.pop();
     }
 
 
+
     private void drawDonutSegment(
             MatrixStack matrices,
             int centerX, int centerY,
-            int innerRadius, int outerRadius,
             float startAngle, float endAngle,
             int r, int g, int b, int a
     ) {
@@ -107,25 +75,23 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
         buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
 
         float angleRange = endAngle - startAngle;
-        int segments = Math.max(1,
-                (int) (CIRCLE_SEGMENTS * Math.abs(angleRange) / 360f));
+        int segments = Math.max(1, (int) (CIRCLE_SEGMENTS * Math.abs(angleRange) / 360f));
 
         for (int i = 0; i <= segments; i++) {
             float angle = startAngle + angleRange * i / segments;
             float rad = (float) Math.toRadians(angle);
-
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
 
             buffer.vertex(matrix,
-                    centerX + cos * outerRadius,
-                    centerY + sin * outerRadius,
+                    centerX + cos * CIRCLE_OUTER_RADIUS,
+                    centerY + sin * CIRCLE_OUTER_RADIUS,
                     0
             ).color(r, g, b, a).next();
 
             buffer.vertex(matrix,
-                    centerX + cos * innerRadius,
-                    centerY + sin * innerRadius,
+                    centerX + cos * CIRCLE_INNER_RADIUS,
+                    centerY + sin * CIRCLE_INNER_RADIUS,
                     0
             ).color(r, g, b, a).next();
         }
@@ -135,13 +101,7 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
         RenderSystem.disableBlend();
     }
 
-    private void drawOutline(
-            MatrixStack matrices,
-            int centerX, int centerY,
-            int innerRadius, int outerRadius,
-            int thickness,
-            int r, int g, int b, int a
-    ) {
+    private void drawOutline(MatrixStack matrices, int centerX, int centerY) {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
 
         RenderSystem.enableBlend();
@@ -151,50 +111,64 @@ public class EatingProgressHudConfigurable implements HudRenderCallback {
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 
-        if (outerRadius > 0) {
-            buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
-            drawRingOutline(buffer, matrix, centerX, centerY, outerRadius, thickness, r, g, b, a);
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
-        }
+        // Draw outer ring outline
+        buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+        drawRing(buffer, matrix, centerX, centerY, CIRCLE_OUTER_RADIUS, OUTLINE_WIDTH, true);
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
 
-        if (innerRadius > 0) {
-            buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
-            drawRingOutline(buffer, matrix, centerX, centerY, innerRadius, -thickness, r, g, b, a);
-            BufferRenderer.drawWithGlobalProgram(buffer.end());
-        }
+        // Draw inner ring outline
+        buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+        drawRing(buffer, matrix, centerX, centerY, CIRCLE_INNER_RADIUS, OUTLINE_WIDTH, false);
+        BufferRenderer.drawWithGlobalProgram(buffer.end());
 
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 
-    private void drawRingOutline(
+    private void drawRing(
             BufferBuilder buffer,
             Matrix4f matrix,
             int centerX, int centerY,
             int radius, int thickness,
-            int r, int g, int b, int a
+            boolean outer
     ) {
-        int outer = thickness < 0 ? radius - thickness : radius;
-        int inner = thickness < 0 ? radius : radius - thickness;
+        int outerRadius = outer ? radius : radius + thickness;
+        int innerRadius = outer ? radius - thickness : radius;
 
         for (int i = 0; i <= CIRCLE_SEGMENTS; i++) {
             float angle = (float) i / CIRCLE_SEGMENTS * 360f;
             float rad = (float) Math.toRadians(angle);
-
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
 
             buffer.vertex(matrix,
-                    centerX + cos * outer,
-                    centerY + sin * outer,
+                    centerX + cos * outerRadius,
+                    centerY + sin * outerRadius,
                     0
-            ).color(r, g, b, a).next();
+            ).color(220, 220, 220, 220).next();
 
             buffer.vertex(matrix,
-                    centerX + cos * inner,
-                    centerY + sin * inner,
+                    centerX + cos * innerRadius,
+                    centerY + sin * innerRadius,
                     0
-            ).color(r, g, b, a).next();
+            ).color(220, 220, 220, 220).next();
         }
+    }
+
+    private int getServerSideMaxUseTime(ItemStack stack) {
+        int vanillaTime = stack.getItem().getMaxUseTime(stack); // Default vanilla time
+
+        if (EatingPace.isServerSideActive()) {
+            if (EatingPace.CONFIG.enableCustomFoodValues) {
+                CustomFoodComponent customFood = ModifiedFoods.getCustomFood(stack.getItem());
+                if (customFood != null) {
+                    return (int) (customFood.getEatTicks() * EatingPace.CONFIG.eatingSpeedMultiplier);
+                }
+            }
+
+            return (int) (vanillaTime * EatingPace.CONFIG.eatingSpeedMultiplier);
+        }
+
+        return vanillaTime;
     }
 }

@@ -14,7 +14,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(HungerManager.class)
 public abstract class HungerManagerMixin {
     @Shadow private float saturationLevel;
-    @Shadow private int foodLevel;
 
     @Unique
     private static final float VANILLA_SATURATION_CAP = 20.0f;
