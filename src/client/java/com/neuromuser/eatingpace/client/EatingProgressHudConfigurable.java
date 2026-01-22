@@ -13,7 +13,7 @@ import org.joml.Matrix4f;
 public class EatingProgressHudConfigurable implements HudRenderCallback {
     private static final int CIRCLE_OUTER_RADIUS = 10;
     private static final int CIRCLE_INNER_RADIUS = 5;
-    private static final int CIRCLE_SEGMENTS = 20;
+    private static final int CIRCLE_SEGMENTS = 40;
 
     private static final int OUTLINE_WIDTH = 1;
 
