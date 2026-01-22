@@ -1,5 +1,6 @@
 package com.neuromuser.eatingpace.mixin;
 
+import com.neuromuser.eatingpace.EatingPace;
 import com.neuromuser.eatingpace.config.CustomFoodComponent;
 import com.neuromuser.eatingpace.config.ModifiedFoods;
 import net.minecraft.item.ItemStack;
@@ -12,6 +13,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class ItemStackEatingMixin {
     @Inject(method = "getMaxUseTime", at = @At("HEAD"), cancellable = true)
     private void modifyMaxUseTime(CallbackInfoReturnable<Integer> cir) {
+        if (!EatingPace.isServerSideActive()){
+            return;
+        }
+
         ItemStack stack = (ItemStack)(Object)this;
 
         if (stack.getItem().getFoodComponent() != null) {

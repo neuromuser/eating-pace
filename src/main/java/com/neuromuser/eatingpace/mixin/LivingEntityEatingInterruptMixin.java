@@ -1,5 +1,6 @@
 package com.neuromuser.eatingpace.mixin;
 
+import com.neuromuser.eatingpace.EatingPace;
 import com.neuromuser.eatingpace.config.EatingInterruptConfig;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
@@ -27,6 +28,10 @@ public abstract class LivingEntityEatingInterruptMixin {
 
     @Inject(method = "damage", at = @At("HEAD"))
     private void interruptEatingOnDamage(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        if (!EatingPace.isServerSideActive()) {
+            return;
+        }
+
         LivingEntity entity = (LivingEntity) (Object) this;
 
         if (!(entity instanceof PlayerEntity)) {
