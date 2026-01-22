@@ -17,13 +17,17 @@ public class ItemStackEatingMixin {
             return;
         }
 
+        if (!EatingPace.CONFIG.enableCustomFoodValues) {
+            return;
+        }
+
         ItemStack stack = (ItemStack)(Object)this;
 
         if (stack.getItem().getFoodComponent() != null) {
             CustomFoodComponent customFood = ModifiedFoods.getCustomFood(stack.getItem());
 
             if (customFood != null) {
-                cir.setReturnValue(customFood.getEatTicks());
+                cir.setReturnValue((int) (customFood.getEatTicks() * EatingPace.CONFIG.eatingSpeedMultiplier));
             }
         }
     }

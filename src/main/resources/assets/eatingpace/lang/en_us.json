@@ -1,0 +1,47 @@
+{
+  "text.autoconfig.eatingpace.title": "Eating Pace Settings",
+
+  "text.autoconfig.eatingpace.category.general": "General",
+  "text.autoconfig.eatingpace.category.interruption": "Interruption",
+
+  "text.autoconfig.eatingpace.option.saturationCap": "Saturation Cap",
+  "text.autoconfig.eatingpace.option.saturationCap.@PrefixText": "",
+  "text.autoconfig.eatingpace.option.saturationCap.@Tooltip": "Maximum saturation level (default: 30.0)",
+
+  "text.autoconfig.eatingpace.option.enableCustomFoodValues": "Enable Custom Food Values",
+  "text.autoconfig.eatingpace.option.enableCustomFoodValues.@Tooltip": "Use custom food values for eating pace",
+
+  "text.autoconfig.eatingpace.option.eatingSpeedMultiplier": "Eating Speed",
+  "text.autoconfig.eatingpace.option.eatingSpeedMultiplier.@Tooltip": "Speed multiplier for eating (0.5 = half speed, 2.0 = double speed)",
+
+  "text.autoconfig.eatingpace.option.enableEatingInterruption": "Enable Eating Interruption",
+  "text.autoconfig.eatingpace.option.enableEatingInterruption.@PrefixText": "",
+  "text.autoconfig.eatingpace.option.enableEatingInterruption.@Tooltip": "Master switch for all interruption types",
+
+  "text.autoconfig.eatingpace.option.fireInterrupts": "Fire Interrupts",
+  "text.autoconfig.eatingpace.option.fireInterrupts.@Tooltip": "Stop eating when taking fire or lava damage",
+
+  "text.autoconfig.eatingpace.option.poisonInterrupts": "Poison Interrupts",
+  "text.autoconfig.eatingpace.option.poisonInterrupts.@Tooltip": "Stop eating when poisoned or withered",
+
+  "text.autoconfig.eatingpace.option.fallInterrupts": "Fall Damage Interrupts",
+  "text.autoconfig.eatingpace.option.fallInterrupts.@Tooltip": "Stop eating when taking fall damage",
+
+  "text.autoconfig.eatingpace.option.drowningInterrupts": "Drowning Interrupts",
+  "text.autoconfig.eatingpace.option.drowningInterrupts.@Tooltip": "Stop eating when drowning",
+
+  "text.autoconfig.eatingpace.option.suffocationInterrupts": "Suffocation Interrupts",
+  "text.autoconfig.eatingpace.option.suffocationInterrupts.@Tooltip": "Stop eating when suffocating in blocks",
+
+  "text.autoconfig.eatingpace.option.starvationInterrupts": "Starvation Interrupts",
+  "text.autoconfig.eatingpace.option.starvationInterrupts.@Tooltip": "Stop eating when taking starvation damage",
+
+  "text.autoconfig.eatingpace.option.meleeInterrupts": "Melee Damage Interrupts",
+  "text.autoconfig.eatingpace.option.meleeInterrupts.@Tooltip": "Stop eating when hit by melee attacks",
+
+  "text.autoconfig.eatingpace.option.projectileInterrupts": "Projectile Damage Interrupts",
+  "text.autoconfig.eatingpace.option.projectileInterrupts.@Tooltip": "Stop eating when hit by arrows, etc.",
+
+  "text.autoconfig.eatingpace.option.explosionInterrupts": "Explosion Damage Interrupts",
+  "text.autoconfig.eatingpace.option.explosionInterrupts.@Tooltip": "Stop eating when hit by explosions"
+}

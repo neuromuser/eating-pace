@@ -17,6 +17,11 @@ public abstract class FoodComponentMixin {
             return original;
         }
 
+        // Check if custom food values are enabled in config
+        if (!EatingPace.CONFIG.enableCustomFoodValues) {
+            return original;
+        }
+
         Item thisItem = (Item)(Object)this;
         CustomFoodComponent customFood = ModifiedFoods.getCustomFood(thisItem);
 

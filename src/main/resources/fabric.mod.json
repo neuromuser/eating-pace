@@ -23,6 +23,9 @@
 		],
 		"client": [
 			"com.neuromuser.eatingpace.EatingPaceClient"
+		],
+		"modmenu": [
+			"com.neuromuser.eatingpace.client.ModMenuIntegration"
 		]
 	},
 	"mixins": [

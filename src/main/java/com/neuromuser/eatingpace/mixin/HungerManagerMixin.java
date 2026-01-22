@@ -18,28 +18,23 @@ public abstract class HungerManagerMixin {
 
     @Unique
     private static final float VANILLA_SATURATION_CAP = 20.0f;
-    @Unique
-    private static final float NEW_SATURATION_CAP = 30.0f;
 
     @ModifyArg(method = "add", at = @At(value = "INVOKE",
             target = "Ljava/lang/Math;min(FF)F"), index = 1)
     private float modifySaturationCap(float originalCap) {
-        // Only apply new cap if server has the mod
         if (EatingPace.isServerSideActive()) {
-            return NEW_SATURATION_CAP;
+            return EatingPace.CONFIG.saturationCap;
         }
         return VANILLA_SATURATION_CAP;
     }
 
     @Inject(method = "setFoodLevel", at = @At("TAIL"))
     private void onSetFoodLevel(int foodLevel, CallbackInfo ci) {
-        // Only apply new cap if server has the mod
         if (EatingPace.isServerSideActive()) {
-            if (this.saturationLevel > NEW_SATURATION_CAP) {
-                this.saturationLevel = NEW_SATURATION_CAP;
+            if (this.saturationLevel > EatingPace.CONFIG.saturationCap) {
+                this.saturationLevel = EatingPace.CONFIG.saturationCap;
             }
         } else {
-            // Vanilla behavior - cap at food level
             if (this.saturationLevel > VANILLA_SATURATION_CAP) {
                 this.saturationLevel = VANILLA_SATURATION_CAP;
             }
@@ -48,9 +43,8 @@ public abstract class HungerManagerMixin {
 
     @ModifyReturnValue(method = "getSaturationLevel", at = @At("RETURN"))
     private float ensureWithinCap(float original) {
-        // Only apply new cap if server has the mod
         if (EatingPace.isServerSideActive()) {
-            return Math.min(original, NEW_SATURATION_CAP);
+            return Math.min(original, EatingPace.CONFIG.saturationCap);
         }
         return Math.min(original, VANILLA_SATURATION_CAP);
     }

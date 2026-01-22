@@ -1,7 +1,6 @@
 package com.neuromuser.eatingpace.mixin;
 
 import com.neuromuser.eatingpace.EatingPace;
-import com.neuromuser.eatingpace.config.EatingInterruptConfig;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -32,6 +31,11 @@ public abstract class LivingEntityEatingInterruptMixin {
             return;
         }
 
+        // Check if eating interruption is enabled
+        if (!EatingPace.CONFIG.enableEatingInterruption) {
+            return;
+        }
+
         LivingEntity entity = (LivingEntity) (Object) this;
 
         if (!(entity instanceof PlayerEntity)) {
@@ -57,25 +61,37 @@ public abstract class LivingEntityEatingInterruptMixin {
         String sourceName = source.getName();
 
         if (source.isIn(DamageTypeTags.IS_FIRE) || sourceName.equals("inFire") || sourceName.equals("onFire") || sourceName.equals("lava")) {
-            return EatingInterruptConfig.FIRE_INTERRUPTS;
+            return EatingPace.CONFIG.fireInterrupts;
         }
 
         if (sourceName.contains("magic") || sourceName.contains("poison") || sourceName.contains("wither")) {
-            return EatingInterruptConfig.POISON_INTERRUPTS;
+            return EatingPace.CONFIG.poisonInterrupts;
+        }
+
+        if (sourceName.equals("drown") || sourceName.contains("drowning")) {
+            return EatingPace.CONFIG.drowningInterrupts;
+        }
+
+        if (sourceName.equals("inWall") || sourceName.contains("suffocate") || sourceName.contains("suffocation")) {
+            return EatingPace.CONFIG.suffocationInterrupts;
+        }
+
+        if (sourceName.equals("starve") || sourceName.contains("starvation")) {
+            return EatingPace.CONFIG.starvationInterrupts;
         }
 
         if (source.isIn(DamageTypeTags.IS_FALL)) {
-            return EatingInterruptConfig.FALL_INTERRUPTS;
+            return EatingPace.CONFIG.fallInterrupts;
         }
 
         if (source.isIn(DamageTypeTags.IS_PROJECTILE)) {
-            return EatingInterruptConfig.PROJECTILE_INTERRUPTS;
+            return EatingPace.CONFIG.projectileInterrupts;
         }
 
         if (source.isIn(DamageTypeTags.IS_EXPLOSION)) {
-            return EatingInterruptConfig.EXPLOSION_INTERRUPTS;
+            return EatingPace.CONFIG.explosionInterrupts;
         }
 
-        return EatingInterruptConfig.MELEE_INTERRUPTS;
+        return EatingPace.CONFIG.meleeInterrupts;
     }
 }
