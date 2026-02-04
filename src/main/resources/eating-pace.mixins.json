@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.neuromuser.eatingpace.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "FoodComponentMixin",
+    "HungerManagerMixin",
+    "ItemStackEatingMixin",
+    "LivingEntityEatingInterruptMixin"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

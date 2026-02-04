@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "eating-pace",
+  "version": "${version}",
+  "name": "Eating Pace",
+  "description": "A Fabric mod",
+  "authors": [
+    "Neuromuser"
+  ],
+  "contact": {
+    "sources": "https://github.com/neuromuser/eating-pace"
+  },
+  "accessWidener": "eatingpace.accesswidener",
+  "license": "MIT",
+  "icon": "assets/eating-pace/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.neuromuser.eatingpace.EatingPace"
+    ],
+    "client": [
+      "com.neuromuser.eatingpace.EatingPaceClient"
+    ],
+    "modmenu": [
+      "com.neuromuser.eatingpace.ModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "eating-pace.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.16.0",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "fabric-api": "*"
+  }
+}
