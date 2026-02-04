@@ -1,18 +1,18 @@
 package com.neuromuser.eatingpace.config;
 
+import net.minecraft.component.type.FoodComponent;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.item.FoodComponent;
-
+import net.minecraft.entity.player.HungerConstants;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class CustomFoodComponent {
     private final int hunger;
     private final float saturation;
-    private boolean meat = false;
+    private boolean meat = false; 
     private boolean alwaysEdible = false;
-    private boolean snack = false;
-    private int eatTicks = 32;
+    private float eatSeconds = 1.6f; 
     private final List<StatusEffectEntry> effects = new ArrayList<>();
 
     public static class StatusEffectEntry {
@@ -41,13 +41,12 @@ public class CustomFoodComponent {
     }
 
     public CustomFoodComponent snack() {
-        this.snack = true;
-        this.eatTicks = 16;
+        this.eatSeconds = 0.8f; 
         return this;
     }
 
     public CustomFoodComponent eatTicks(int ticks) {
-        this.eatTicks = ticks;
+        this.eatSeconds = ticks / 20.0f;
         return this;
     }
 
@@ -56,28 +55,22 @@ public class CustomFoodComponent {
         return this;
     }
 
-    // Getters
-    public int getHunger() { return hunger; }
-    public float getSaturation() { return saturation; }
-    public boolean isMeat() { return meat; }
-    public boolean isAlwaysEdible() { return alwaysEdible; }
-    public boolean isSnack() { return snack; }
-    public int getEatTicks() { return eatTicks; }
-    public List<StatusEffectEntry> getEffects() { return effects; }
+    public int getEatTicks() { return (int) (eatSeconds * 20); }
 
     public FoodComponent toVanillaComponent() {
-        FoodComponent.Builder builder = new FoodComponent.Builder()
-                .hunger(hunger)
-                .saturationModifier(saturation);
+        float calculatedSaturation = HungerConstants.calculateSaturation(this.hunger, this.saturation);
 
-        if (meat) builder.meat();
-        if (alwaysEdible) builder.alwaysEdible();
-        if (snack) builder.snack();
+        List<FoodComponent.StatusEffectEntry> vanillaEffects = effects.stream()
+                .map(e -> new FoodComponent.StatusEffectEntry(e.effect, e.chance))
+                .toList();
 
-        for (StatusEffectEntry entry : effects) {
-            builder.statusEffect(entry.effect, entry.chance);
-        }
-
-        return builder.build();
+        return new FoodComponent(
+                this.hunger,
+                calculatedSaturation,
+                this.alwaysEdible,
+                this.eatSeconds,
+                Optional.empty(),
+                vanillaEffects
+        );
     }
 }

@@ -16,18 +16,18 @@ public class EatingPace implements ModInitializer {
         public void onInitialize() {
                 ConfigManager.load(FabricLoader.getInstance().getConfigDir().resolve("eating-pace.json"));
 
-                if (ConfigManager.isPhysicalServer()) {
-                        ConfigNetworking.initServer();
-                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+
+                ConfigNetworking.init();
+
+                ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+                        if (server.isDedicated()) {
                                 ConfigNetworking.sendToClient(handler.player);
-                        });
-                        LOGGER.info("Server initialization for {}!", MOD_ID);
-                } else {
-                        ConfigNetworking.initIntegrated();
-                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
+                                LOGGER.info("Synced config to joining player: {}", handler.player.getName().getString());
+                        } else {
                                 ConfigManager.setIntegratedServer(true);
-                        });
-                        LOGGER.info("Integrated server initialization for {}!", MOD_ID);
-                }
+                        }
+                });
+
+                LOGGER.info("Eating Pace initialized!");
         }
 }

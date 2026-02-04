@@ -10,9 +10,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.FoodComponent;
 import net.minecraft.item.ItemStack;
+import net.minecraft.component.type.FoodComponent;
 import org.joml.Matrix4f;
 
 public class EatingProgressHud implements HudRenderCallback {
@@ -22,14 +23,14 @@ public class EatingProgressHud implements HudRenderCallback {
     private static final int OUTLINE_WIDTH = 1;
 
     @Override
-    public void onHudRender(DrawContext drawContext, float tickDelta) {
+    public void onHudRender(DrawContext drawContext, RenderTickCounter tickCounter) {
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerEntity player = client.player;
 
         if (player == null || !player.isUsingItem()) return;
 
         ItemStack usingItem = player.getActiveItem();
-        if (!usingItem.isFood()) return;
+        if (!usingItem.contains(DataComponentTypes.FOOD)) return;
 
         int maxUseTicks = calculateMaxUseTime(usingItem);
         int usedTicks = player.getItemUseTimeLeft();
@@ -44,7 +45,7 @@ public class EatingProgressHud implements HudRenderCallback {
         MatrixStack matrices = drawContext.getMatrices();
         matrices.push();
 
-        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 80, 0);
+        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 80, 100);
 
         if (progress > 0f) {
             drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 80, 240);
@@ -65,11 +66,10 @@ public class EatingProgressHud implements HudRenderCallback {
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
-        buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+        Tessellator tessellator = Tessellator.getInstance();
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
 
         float angleRange = endAngle - startAngle;
         int segments = Math.max(1, (int) (CIRCLE_SEGMENTS * Math.abs(angleRange) / 360f));
@@ -80,21 +80,14 @@ public class EatingProgressHud implements HudRenderCallback {
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
 
-            buffer.vertex(matrix,
-                    centerX + cos * CIRCLE_OUTER_RADIUS,
-                    centerY + sin * CIRCLE_OUTER_RADIUS,
-                    0
-            ).color(r, g, b, a).next();
+            buffer.vertex(matrix, centerX + cos * CIRCLE_OUTER_RADIUS, centerY + sin * CIRCLE_OUTER_RADIUS, 0)
+                    .color(r, g, b, a);
 
-            buffer.vertex(matrix,
-                    centerX + cos * CIRCLE_INNER_RADIUS,
-                    centerY + sin * CIRCLE_INNER_RADIUS,
-                    0
-            ).color(r, g, b, a).next();
+            buffer.vertex(matrix, centerX + cos * CIRCLE_INNER_RADIUS, centerY + sin * CIRCLE_INNER_RADIUS, 0)
+                    .color(r, g, b, a);
         }
 
         BufferRenderer.drawWithGlobalProgram(buffer.end());
-        RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 
@@ -102,31 +95,22 @@ public class EatingProgressHud implements HudRenderCallback {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
 
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.disableDepthTest();
         RenderSystem.setShader(GameRenderer::getPositionColorProgram);
 
-        BufferBuilder buffer = Tessellator.getInstance().getBuffer();
+        Tessellator tessellator = Tessellator.getInstance();
 
-        buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+        BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
         drawRing(buffer, matrix, centerX, centerY, CIRCLE_OUTER_RADIUS, OUTLINE_WIDTH, true);
         BufferRenderer.drawWithGlobalProgram(buffer.end());
 
-        buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
+        buffer = tessellator.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
         drawRing(buffer, matrix, centerX, centerY, CIRCLE_INNER_RADIUS, OUTLINE_WIDTH, false);
         BufferRenderer.drawWithGlobalProgram(buffer.end());
 
-        RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
 
-    private void drawRing(
-            BufferBuilder buffer,
-            Matrix4f matrix,
-            int centerX, int centerY,
-            int radius, int thickness,
-            boolean outer
-    ) {
+    private void drawRing(BufferBuilder buffer, Matrix4f matrix, int centerX, int centerY, int radius, int thickness, boolean outer) {
         int outerRadius = outer ? radius : radius + thickness;
         int innerRadius = outer ? radius - thickness : radius;
 
@@ -136,23 +120,16 @@ public class EatingProgressHud implements HudRenderCallback {
             float cos = (float) Math.cos(rad);
             float sin = (float) Math.sin(rad);
 
-            buffer.vertex(matrix,
-                    centerX + cos * outerRadius,
-                    centerY + sin * outerRadius,
-                    0
-            ).color(220, 220, 220, 220).next();
+            buffer.vertex(matrix, centerX + cos * outerRadius, centerY + sin * outerRadius, 0)
+                    .color(220, 220, 220, 220);
 
-            buffer.vertex(matrix,
-                    centerX + cos * innerRadius,
-                    centerY + sin * innerRadius,
-                    0
-            ).color(220, 220, 220, 220).next();
+            buffer.vertex(matrix, centerX + cos * innerRadius, centerY + sin * innerRadius, 0)
+                    .color(220, 220, 220, 220);
         }
     }
 
     private int calculateMaxUseTime(ItemStack stack) {
         int baseTime = getVanillaBaseTime(stack);
-
         Config config = ConfigManager.get();
 
         if (config.enableCustomFoodValues) {
@@ -166,16 +143,9 @@ public class EatingProgressHud implements HudRenderCallback {
     }
 
     private int getVanillaBaseTime(ItemStack stack) {
-        FoodComponent food = stack.getItem().getFoodComponent();
+        FoodComponent food = stack.get(DataComponentTypes.FOOD);
         if (food == null) return 32;
 
-        try {
-            if (food.isSnack()) {
-                return 16;
-            }
-        } catch (Exception e) {
-        }
-
-        return 32;
+        return (int) (food.eatSeconds() * 20);
     }
 }

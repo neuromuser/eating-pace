@@ -1,6 +1,7 @@
 package com.neuromuser.eatingpace.mixin;
 
 import com.neuromuser.eatingpace.config.ConfigManager;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -42,7 +43,7 @@ public abstract class LivingEntityEatingInterruptMixin {
         }
 
         ItemStack activeItem = this.getActiveItem();
-        if (activeItem.isEmpty() || !activeItem.isFood()) {
+        if (activeItem.isEmpty() || !activeItem.contains(DataComponentTypes.FOOD)) {
             return;
         }
 

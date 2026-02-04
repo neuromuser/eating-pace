@@ -7,13 +7,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.util.Identifier;
 
 public class ConfigNetworkingClient {
-    private static final Identifier SYNC_ID = new Identifier("eating-pace", "config");
+    private static final Identifier SYNC_ID = Identifier.of("eating-pace", "config");
 
     public static void init() {
-        ClientPlayNetworking.registerGlobalReceiver(SYNC_ID, (client, handler, buf, responseSender) -> {
-            String json = buf.readString();
-            client.execute(() -> {
-                ConfigManager.receiveServerConfig(json);
+        ClientPlayNetworking.registerGlobalReceiver(com.neuromuser.eatingpace.config.ConfigSyncPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                ConfigManager.receiveServerConfig(payload.json());
                 EatingPace.LOGGER.info("Received server config");
             });
         });

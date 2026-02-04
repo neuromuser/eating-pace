@@ -1,7 +1,3 @@
 accessWidener v2 named
 
-# Make foodComponent mutable
-mutable field net/minecraft/item/Item foodComponent Lnet/minecraft/item/FoodComponent;
-
-# Allow us to set it
-accessible field net/minecraft/item/Item foodComponent Lnet/minecraft/item/FoodComponent;
+accessible field net/minecraft/item/Item components Lnet/minecraft/component/ComponentMap;
