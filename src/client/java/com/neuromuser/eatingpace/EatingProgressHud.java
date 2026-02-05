@@ -7,13 +7,12 @@ import com.neuromuser.eatingpace.config.CustomFoodComponent;
 import com.neuromuser.eatingpace.config.ModifiedFoods;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.FoodComponent;
 import net.minecraft.item.ItemStack;
-import org.joml.Matrix4f;
+import net.minecraft.util.math.Matrix4f;
 
 public class EatingProgressHud implements HudRenderCallback {
     private static final int CIRCLE_OUTER_RADIUS = 10;
@@ -21,8 +20,9 @@ public class EatingProgressHud implements HudRenderCallback {
     private static final int CIRCLE_SEGMENTS = 40;
     private static final int OUTLINE_WIDTH = 1;
 
+    // 1.19.2 uses MatrixStack directly instead of DrawContext
     @Override
-    public void onHudRender(DrawContext drawContext, float tickDelta) {
+    public void onHudRender(MatrixStack matrices, float tickDelta) {
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerEntity player = client.player;
 
@@ -41,13 +41,12 @@ public class EatingProgressHud implements HudRenderCallback {
         int centerX = screenWidth / 2;
         int centerY = screenHeight / 2;
 
-        MatrixStack matrices = drawContext.getMatrices();
         matrices.push();
 
-        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 80, 0);
+        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 0);
 
         if (progress > 0f) {
-            drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 80, 240);
+            drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 240);
         }
 
         drawOutline(matrices, centerX, centerY);
@@ -59,14 +58,14 @@ public class EatingProgressHud implements HudRenderCallback {
             MatrixStack matrices,
             int centerX, int centerY,
             float startAngle, float endAngle,
-            int r, int g, int b, int a
+            int r, int g, int a
     ) {
         Matrix4f matrix = matrices.peek().getPositionMatrix();
 
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader); // Method name change
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
         buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
@@ -84,16 +83,17 @@ public class EatingProgressHud implements HudRenderCallback {
                     centerX + cos * CIRCLE_OUTER_RADIUS,
                     centerY + sin * CIRCLE_OUTER_RADIUS,
                     0
-            ).color(r, g, b, a).next();
+            ).color(r, g, 80, a).next();
 
             buffer.vertex(matrix,
                     centerX + cos * CIRCLE_INNER_RADIUS,
                     centerY + sin * CIRCLE_INNER_RADIUS,
                     0
-            ).color(r, g, b, a).next();
+            ).color(r, g, 80, a).next();
         }
 
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        // 1.19.2 uses drawWithShader instead of drawWithGlobalProgram
+        BufferRenderer.drawWithShader(buffer.end());
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
     }
@@ -104,17 +104,17 @@ public class EatingProgressHud implements HudRenderCallback {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableDepthTest();
-        RenderSystem.setShader(GameRenderer::getPositionColorProgram);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         BufferBuilder buffer = Tessellator.getInstance().getBuffer();
 
         buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
-        drawRing(buffer, matrix, centerX, centerY, CIRCLE_OUTER_RADIUS, OUTLINE_WIDTH, true);
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        drawRing(buffer, matrix, centerX, centerY, CIRCLE_OUTER_RADIUS, true);
+        BufferRenderer.drawWithShader(buffer.end());
 
         buffer.begin(VertexFormat.DrawMode.TRIANGLE_STRIP, VertexFormats.POSITION_COLOR);
-        drawRing(buffer, matrix, centerX, centerY, CIRCLE_INNER_RADIUS, OUTLINE_WIDTH, false);
-        BufferRenderer.drawWithGlobalProgram(buffer.end());
+        drawRing(buffer, matrix, centerX, centerY, CIRCLE_INNER_RADIUS, false);
+        BufferRenderer.drawWithShader(buffer.end());
 
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
@@ -124,11 +124,11 @@ public class EatingProgressHud implements HudRenderCallback {
             BufferBuilder buffer,
             Matrix4f matrix,
             int centerX, int centerY,
-            int radius, int thickness,
+            int radius,
             boolean outer
     ) {
-        int outerRadius = outer ? radius : radius + thickness;
-        int innerRadius = outer ? radius - thickness : radius;
+        int outerRadius = outer ? radius : radius + EatingProgressHud.OUTLINE_WIDTH;
+        int innerRadius = outer ? radius - EatingProgressHud.OUTLINE_WIDTH : radius;
 
         for (int i = 0; i <= CIRCLE_SEGMENTS; i++) {
             float angle = (float) i / CIRCLE_SEGMENTS * 360f;
@@ -152,7 +152,6 @@ public class EatingProgressHud implements HudRenderCallback {
 
     private int calculateMaxUseTime(ItemStack stack) {
         int baseTime = getVanillaBaseTime(stack);
-
         Config config = ConfigManager.get();
 
         if (config.enableCustomFoodValues) {
@@ -169,11 +168,8 @@ public class EatingProgressHud implements HudRenderCallback {
         FoodComponent food = stack.getItem().getFoodComponent();
         if (food == null) return 32;
 
-        try {
-            if (food.isSnack()) {
-                return 16;
-            }
-        } catch (Exception e) {
+        if (food.isSnack()) {
+            return 16;
         }
 
         return 32;

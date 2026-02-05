@@ -18,15 +18,11 @@ public class EatingPace implements ModInitializer {
 
                 if (ConfigManager.isPhysicalServer()) {
                         ConfigNetworking.initServer();
-                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-                                ConfigNetworking.sendToClient(handler.player);
-                        });
+                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ConfigNetworking.sendToClient(handler.player));
                         LOGGER.info("Server initialization for {}!", MOD_ID);
                 } else {
                         ConfigNetworking.initIntegrated();
-                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
-                                ConfigManager.setIntegratedServer(true);
-                        });
+                        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ConfigManager.setIntegratedServer(true));
                         LOGGER.info("Integrated server initialization for {}!", MOD_ID);
                 }
         }

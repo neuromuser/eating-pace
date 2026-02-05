@@ -5,7 +5,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.tag.DamageTypeTags;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -33,6 +32,7 @@ public abstract class LivingEntityEatingInterruptMixin {
 
         LivingEntity entity = (LivingEntity) (Object) this;
 
+        // In 1.19.2, player-only logic is still fine here
         if (!(entity instanceof PlayerEntity)) {
             return;
         }
@@ -42,6 +42,7 @@ public abstract class LivingEntityEatingInterruptMixin {
         }
 
         ItemStack activeItem = this.getActiveItem();
+        // activeItem.isFood() works in 1.19.2
         if (activeItem.isEmpty() || !activeItem.isFood()) {
             return;
         }
@@ -53,40 +54,42 @@ public abstract class LivingEntityEatingInterruptMixin {
 
     @Unique
     private boolean shouldInterruptEating(DamageSource source) {
+        // 1.19.2 uses source.getName() and specific boolean checks
         String sourceName = source.getName();
 
-        if (source.isIn(DamageTypeTags.IS_FIRE) || sourceName.equals("inFire") || sourceName.equals("onFire") || sourceName.equals("lava")) {
+        if (source.isFire() || sourceName.equals("lava")) {
             return ConfigManager.get().fireInterrupts;
         }
 
-        if (sourceName.contains("magic") || sourceName.contains("poison") || sourceName.contains("wither")) {
+        if (source.isMagic() || sourceName.contains("poison") || sourceName.contains("wither")) {
             return ConfigManager.get().poisonInterrupts;
         }
 
-        if (sourceName.equals("drown") || sourceName.contains("drowning")) {
-            return ConfigManager.get().drowningInterrupts;
+        switch (sourceName) {
+            case "drown" -> {
+                return ConfigManager.get().drowningInterrupts;
+            }
+            case "inWall" -> {
+                return ConfigManager.get().suffocationInterrupts;
+            }
+            case "starve" -> {
+                return ConfigManager.get().starvationInterrupts;
+            }
         }
 
-        if (sourceName.equals("inWall") || sourceName.contains("suffocate") || sourceName.contains("suffocation")) {
-            return ConfigManager.get().suffocationInterrupts;
-        }
-
-        if (sourceName.equals("starve") || sourceName.contains("starvation")) {
-            return ConfigManager.get().starvationInterrupts;
-        }
-
-        if (source.isIn(DamageTypeTags.IS_FALL)) {
+        if (source.isFromFalling()) {
             return ConfigManager.get().fallInterrupts;
         }
 
-        if (source.isIn(DamageTypeTags.IS_PROJECTILE)) {
+        if (source.isProjectile()) {
             return ConfigManager.get().projectileInterrupts;
         }
 
-        if (source.isIn(DamageTypeTags.IS_EXPLOSION)) {
+        if (source.isExplosive()) {
             return ConfigManager.get().explosionInterrupts;
         }
 
+        // Default to melee/other
         return ConfigManager.get().meleeInterrupts;
     }
 }
