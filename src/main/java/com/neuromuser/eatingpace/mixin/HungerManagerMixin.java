@@ -5,7 +5,6 @@ import com.neuromuser.eatingpace.config.ConfigManager;
 import net.minecraft.entity.player.HungerManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
@@ -15,24 +14,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class HungerManagerMixin {
     @Shadow private float saturationLevel;
 
-    @Unique
-    private static final float VANILLA_SATURATION_CAP = 20.0f;
-
     @ModifyArg(method = "add", at = @At(value = "INVOKE",
             target = "Ljava/lang/Math;min(FF)F"), index = 1)
     private float modifySaturationCap(float originalCap) {
-        return ConfigManager.get().saturationCap;
+        return ConfigManager.get().general.saturationCap;
     }
 
     @Inject(method = "setFoodLevel", at = @At("TAIL"))
     private void onSetFoodLevel(int foodLevel, CallbackInfo ci) {
-        if (this.saturationLevel > ConfigManager.get().saturationCap) {
-            this.saturationLevel = ConfigManager.get().saturationCap;
+        float cap = ConfigManager.get().general.saturationCap;
+        if (this.saturationLevel > cap) {
+            this.saturationLevel = cap;
         }
     }
 
     @ModifyReturnValue(method = "getSaturationLevel", at = @At("RETURN"))
     private float ensureWithinCap(float original) {
-        return Math.min(original, ConfigManager.get().saturationCap);
+        return Math.min(original, ConfigManager.get().general.saturationCap);
     }
 }
