@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -12,8 +13,6 @@ import net.minecraft.util.Identifier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -136,7 +135,7 @@ public class ConfigManager {
             }
         }
 
-        if (config.moddedFoodDefaults.enableFallbackLogic && item.isFood()) {
+        if (config.moddedFoodDefaults.enableFallbackLogic && item.getComponents().contains(DataComponentTypes.FOOD)) {
             return getFallbackProperties(item, config);
         }
 
@@ -150,13 +149,13 @@ public class ConfigManager {
 
         isProcessingFoodComponent.set(true);
         try {
-            var foodComponent = item.getFoodComponent();
+            var foodComponent = item.getComponents().get(net.minecraft.component.DataComponentTypes.FOOD);;
             if (foodComponent == null) {
                 return null;
             }
 
-            float baseSaturation = foodComponent.getSaturationModifier();
-            int baseHunger = foodComponent.getHunger();
+            float baseSaturation = foodComponent.saturation();
+            int baseHunger = foodComponent.nutrition();
 
             int eatingTime;
             if (baseSaturation >= config.moddedFoodDefaults.highSaturationThreshold) {
@@ -176,9 +175,9 @@ public class ConfigManager {
                     eatingTime,
                     (int)(baseHunger * config.general.globalHungerMultiplier),
                     scaledSaturation * config.general.globalSaturationMultiplier,
-                    foodComponent.isMeat(),
-                    foodComponent.isSnack(),
-                    foodComponent.isAlwaysEdible()
+                    false,
+                    foodComponent.eatSeconds() <= 0.8F,
+                    foodComponent.canAlwaysEat()
             );
         } finally {
             isProcessingFoodComponent.set(false);
@@ -194,8 +193,8 @@ public class ConfigManager {
     }
 
     public static int getEatingTime(ItemStack stack) {
-        if (!stack.isFood()) {
-            return 32; 
+        if (!stack.contains(DataComponentTypes.FOOD)) {
+            return 32;
         }
 
         FoodProperties props = getFoodProperties(stack.getItem());
@@ -209,9 +208,9 @@ public class ConfigManager {
     private static int getVanillaEatingTime(ItemStack stack) {
         try {
             if (isProcessingFoodComponent.get()) {
-                var foodComponent = stack.getItem().getFoodComponent();
+                var foodComponent = stack.get(net.minecraft.component.DataComponentTypes.FOOD);
                 if (foodComponent != null) {
-                    return foodComponent.isSnack() ? 16 : 32;
+                    return foodComponent.getEatTicks();
                 }
             }
         } catch (Exception e) {

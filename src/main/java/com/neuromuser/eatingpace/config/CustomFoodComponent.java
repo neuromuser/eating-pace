@@ -67,10 +67,9 @@ public class CustomFoodComponent {
 
     public FoodComponent toVanillaComponent() {
         FoodComponent.Builder builder = new FoodComponent.Builder()
-                .hunger(hunger)
+                .nutrition(this.hunger)
                 .saturationModifier(saturation);
 
-        if (meat) builder.meat();
         if (alwaysEdible) builder.alwaysEdible();
         if (snack) builder.snack();
 
