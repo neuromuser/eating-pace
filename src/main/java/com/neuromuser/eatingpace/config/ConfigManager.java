@@ -23,9 +23,6 @@ public class ConfigManager {
     private static boolean isIntegratedServer = false;
     private static final ThreadLocal<Boolean> isProcessingFoodComponent = ThreadLocal.withInitial(() -> false);
 
-    /**
-     * Get the active configuration (server config takes priority when available)
-     */
     public static ModConfig get() {
         if (isPhysicalServer()) {
             return clientConfig;
@@ -42,16 +39,10 @@ public class ConfigManager {
         return clientConfig;
     }
 
-    /**
-     * Get client config specifically (for GUI editing)
-     */
     public static ModConfig getClientConfig() {
         return clientConfig;
     }
 
-    /**
-     * Load config from file
-     */
     public static void load(Path path) {
         try {
             if (Files.exists(path)) {
@@ -74,9 +65,6 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * Save config to file
-     */
     public static void save(Path path) {
         try {
             Files.createDirectories(path.getParent());
@@ -86,16 +74,10 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * Convert config to JSON string
-     */
     public static String toJson() {
         return GSON.toJson(clientConfig);
     }
 
-    /**
-     * Receive server config via network
-     */
     public static void receiveServerConfig(String json) {
         try {
             ModConfig received = GSON.fromJson(json, ModConfig.class);
@@ -108,32 +90,20 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * Mark as integrated server
-     */
     public static void setIntegratedServer(boolean integrated) {
         isIntegratedServer = integrated;
     }
 
-    /**
-     * Clear server config (on disconnect)
-     */
     public static void clearServerConfig() {
         serverConfig = null;
         isServerModPresent = false;
         isIntegratedServer = false;
     }
 
-    /**
-     * Check if server has the mod installed
-     */
     public static boolean hasServerMod() {
         return isServerModPresent;
     }
 
-    /**
-     * Check if running on physical server
-     */
     public static boolean isPhysicalServer() {
         try {
             return FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
@@ -142,11 +112,7 @@ public class ConfigManager {
         }
     }
 
-    // ==================== FOOD PROPERTY GETTERS ====================
 
-    /**
-     * Get food entry for an item (vanilla or modded)
-     */
     public static FoodProperties getFoodProperties(Item item) {
         ModConfig config = get();
 
@@ -156,7 +122,6 @@ public class ConfigManager {
 
         String itemId = getItemId(item);
 
-        // Check vanilla foods first
         if (config.vanillaFoods.containsKey(itemId)) {
             ModConfig.VanillaFoodEntry entry = config.vanillaFoods.get(itemId);
             if (entry.enabled) {
@@ -164,7 +129,6 @@ public class ConfigManager {
             }
         }
 
-        // Check modded foods
         if (config.moddedFoods.containsKey(itemId)) {
             ModConfig.ModdedFoodEntry entry = config.moddedFoods.get(itemId);
             if (entry.enabled) {
@@ -172,7 +136,6 @@ public class ConfigManager {
             }
         }
 
-        // Fallback logic for unregistered modded foods
         if (config.moddedFoodDefaults.enableFallbackLogic && item.isFood()) {
             return getFallbackProperties(item, config);
         }
@@ -180,11 +143,7 @@ public class ConfigManager {
         return null;
     }
 
-    /**
-     * Calculate fallback properties for modded foods
-     */
     private static FoodProperties getFallbackProperties(Item item, ModConfig config) {
-        // Check if we're already processing this item to prevent recursion
         if (isProcessingFoodComponent.get()) {
             return null;
         }
@@ -199,7 +158,6 @@ public class ConfigManager {
             float baseSaturation = foodComponent.getSaturationModifier();
             int baseHunger = foodComponent.getHunger();
 
-            // Determine eating time based on saturation
             int eatingTime;
             if (baseSaturation >= config.moddedFoodDefaults.highSaturationThreshold) {
                 eatingTime = config.moddedFoodDefaults.mealEatingTime;
@@ -209,11 +167,9 @@ public class ConfigManager {
                 eatingTime = config.moddedFoodDefaults.normalEatingTime;
             }
 
-            // Apply hard caps
             eatingTime = Math.max(config.moddedFoodDefaults.minEatingTime,
                     Math.min(config.moddedFoodDefaults.maxEatingTime, eatingTime));
 
-            // Apply saturation scaling
             float scaledSaturation = baseSaturation * config.moddedFoodDefaults.saturationScalingMultiplier;
 
             return new FoodProperties(
@@ -229,23 +185,17 @@ public class ConfigManager {
         }
     }
 
-    /**
-     * Get item ID as string
-     */
     private static String getItemId(Item item) {
         Identifier id = Registries.ITEM.getId(item);
         if (id.getNamespace().equals("minecraft")) {
-            return id.getPath(); // Just the path for vanilla items
+            return id.getPath(); 
         }
-        return id.toString(); // Full ID for modded items
+        return id.toString(); 
     }
 
-    /**
-     * Get eating time for an item
-     */
     public static int getEatingTime(ItemStack stack) {
         if (!stack.isFood()) {
-            return 32; // Default vanilla time
+            return 32; 
         }
 
         FoodProperties props = getFoodProperties(stack.getItem());
@@ -253,16 +203,11 @@ public class ConfigManager {
             return (int)(props.eatingTime * get().general.globalEatingSpeedMultiplier);
         }
 
-        // Fallback to vanilla detection
         return getVanillaEatingTime(stack);
     }
 
-    /**
-     * Fallback vanilla eating time detection
-     */
     private static int getVanillaEatingTime(ItemStack stack) {
         try {
-            // Check if we're already processing to prevent recursion
             if (isProcessingFoodComponent.get()) {
                 var foodComponent = stack.getItem().getFoodComponent();
                 if (foodComponent != null) {
@@ -270,16 +215,11 @@ public class ConfigManager {
                 }
             }
         } catch (Exception e) {
-            // Ignore
         }
         return 32;
     }
 
-    // ==================== FOOD PROPERTIES CLASS ====================
 
-    /**
-     * Wrapper class for food properties
-     */
     public static class FoodProperties {
         public final int eatingTime;
         public final int hunger;

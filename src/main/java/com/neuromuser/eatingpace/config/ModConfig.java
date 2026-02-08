@@ -6,30 +6,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ModConfig {
-    // ==================== GENERAL CATEGORY ====================
     @SerializedName("general")
     public GeneralConfig general = new GeneralConfig();
 
-    // ==================== VANILLA FOOD CATEGORY ====================
     @SerializedName("vanillaFoods")
     public Map<String, VanillaFoodEntry> vanillaFoods = new HashMap<>();
 
-    // ==================== MODDED FOOD CATEGORY ====================
     @SerializedName("moddedFoods")
     public Map<String, ModdedFoodEntry> moddedFoods = new HashMap<>();
 
     @SerializedName("moddedFoodDefaults")
     public ModdedFoodDefaults moddedFoodDefaults = new ModdedFoodDefaults();
 
-    // ==================== INTERRUPTION SETTINGS ====================
     @SerializedName("interruptions")
     public InterruptionConfig interruptions = new InterruptionConfig();
 
     public ModConfig() {
         initializeVanillaFoods();
+        initializeModdedFoods();
     }
 
-    // ==================== INNER CLASSES ====================
 
     public static class GeneralConfig {
         @SerializedName("enableMod")
@@ -53,7 +49,7 @@ public class ModConfig {
         public boolean enabled = true;
 
         @SerializedName("eatingTime")
-        public int eatingTime = 32; // in ticks
+        public int eatingTime = 32; 
 
         @SerializedName("hunger")
         public int hunger = 4;
@@ -135,6 +131,11 @@ public class ModConfig {
             this.hunger = hunger;
             this.saturation = saturation;
         }
+
+        public ModdedFoodEntry meat() {
+            this.isMeat = true;
+            return this;
+        }
     }
 
     public static class EffectEntry {
@@ -142,7 +143,7 @@ public class ModConfig {
         public float chance = 1.0f;
 
         @SerializedName("duration")
-        public int duration = 100; // in ticks
+        public int duration = 100; 
 
         @SerializedName("amplifier")
         public int amplifier = 0;
@@ -160,33 +161,29 @@ public class ModConfig {
         @SerializedName("enableFallbackLogic")
         public boolean enableFallbackLogic = true;
 
-        // Saturation thresholds for categorization
         @SerializedName("highSaturationThreshold")
         public float highSaturationThreshold = 0.8f;
 
         @SerializedName("lowSaturationThreshold")
         public float lowSaturationThreshold = 0.4f;
 
-        // Default eating times (in ticks)
         @SerializedName("mealEatingTime")
-        public int mealEatingTime = 80; // High saturation = longer
+        public int mealEatingTime = 80; 
 
         @SerializedName("normalEatingTime")
-        public int normalEatingTime = 32; // Medium saturation
+        public int normalEatingTime = 32; 
 
         @SerializedName("snackEatingTime")
-        public int snackEatingTime = 16; // Low saturation = faster
+        public int snackEatingTime = 16; 
 
-        // Hard caps (in ticks)
         @SerializedName("minEatingTime")
-        public int minEatingTime = 10; // 0.5 seconds
+        public int minEatingTime = 10; 
 
         @SerializedName("maxEatingTime")
-        public int maxEatingTime = 100; // 5.0 seconds
+        public int maxEatingTime = 100; 
 
-        // Saturation scaling
         @SerializedName("saturationScalingMultiplier")
-        public float saturationScalingMultiplier = 1.0f;
+        public float saturationScalingMultiplier = 1.5f;
     }
 
     public static class InterruptionConfig {
@@ -221,10 +218,12 @@ public class ModConfig {
         public boolean explosionInterrupts = true;
     }
 
-    // ==================== INITIALIZATION ====================
+
+    private void initializeModdedFoods() {
+        moddedFoods.put("artifacts:eternal_steak", new ModdedFoodEntry(110, 8, 0.8f).meat());
+    }
 
     private void initializeVanillaFoods() {
-        // Initialize all vanilla foods with their default values
         addVanillaFood("apple", new VanillaFoodEntry(26, 4, 0.5f));
 
         addVanillaFood("baked_potato", new VanillaFoodEntry(90, 6, 0.9f)

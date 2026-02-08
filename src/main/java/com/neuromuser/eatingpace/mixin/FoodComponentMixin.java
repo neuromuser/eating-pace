@@ -19,11 +19,9 @@ public abstract class FoodComponentMixin {
     private FoodComponent modifyFoodComponent(FoodComponent original) {
         Item thisItem = (Item)(Object)this;
 
-        // Get food properties from our config
         ConfigManager.FoodProperties props = ConfigManager.getFoodProperties(thisItem);
 
         if (props != null && original != null) {
-            // Build new food component with our custom values
             FoodComponent.Builder builder = new FoodComponent.Builder()
                     .hunger(props.hunger)
                     .saturationModifier(props.saturation);
@@ -38,14 +36,12 @@ public abstract class FoodComponentMixin {
                 builder.alwaysEdible();
             }
 
-            // Add status effects
             if (props.effects != null && !props.effects.isEmpty()) {
                 for (var effectEntry : props.effects.entrySet()) {
                     try {
                         String effectId = effectEntry.getKey();
                         var effectData = effectEntry.getValue();
 
-                        // Parse effect ID
                         Identifier effectIdentifier = Identifier.tryParse(effectId);
                         if (effectIdentifier != null) {
                             StatusEffect statusEffect = Registries.STATUS_EFFECT.get(effectIdentifier);
@@ -61,7 +57,6 @@ public abstract class FoodComponentMixin {
                             }
                         }
                     } catch (Exception e) {
-                        // Skip invalid effects
                     }
                 }
             }

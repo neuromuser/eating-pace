@@ -10,7 +10,6 @@ public class ConfigNetworkingClient {
     private static final Identifier SYNC_ID = new Identifier("eating-pace", "config");
 
     public static void init() {
-        // Register handler for receiving server config
         ClientPlayNetworking.registerGlobalReceiver(SYNC_ID, (client, handler, buf, responseSender) -> {
             String json = buf.readString();
             client.execute(() -> {
@@ -19,7 +18,6 @@ public class ConfigNetworkingClient {
             });
         });
 
-        // Clear server config on disconnect
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
             ConfigManager.clearServerConfig();
             EatingPace.LOGGER.info("Disconnected from server, cleared server config");

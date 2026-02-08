@@ -147,7 +147,6 @@ public class EatingProgressHud implements HudRenderCallback {
     }
 
     private int calculateMaxUseTime(ItemStack stack) {
-        // Use ConfigManager which handles both vanilla and modded foods
         return ConfigManager.getEatingTime(stack);
     }
 }

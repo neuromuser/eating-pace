@@ -11,6 +11,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -39,16 +40,12 @@ public class ModMenuIntegration implements ModMenuApi {
 
         ConfigEntryBuilder entryBuilder = builder.entryBuilder();
 
-        // ==================== GENERAL CATEGORY ====================
         createGeneralCategory(builder, entryBuilder, config);
 
-        // ==================== INTERRUPTION CATEGORY ====================
         createInterruptionCategory(builder, entryBuilder, config);
 
-        // ==================== VANILLA FOOD CATEGORY ====================
         createVanillaFoodCategory(builder, entryBuilder, config);
 
-        // ==================== MODDED FOOD CATEGORY ====================
         createModdedFoodCategory(builder, entryBuilder, config);
 
         return builder.build();
@@ -185,54 +182,32 @@ public class ModMenuIntegration implements ModMenuApi {
         ConfigCategory vanillaFood = builder.getOrCreateCategory(Text.literal("🍎 Vanilla Foods"));
 
         vanillaFood.addEntry(entryBuilder.startTextDescription(
-                Text.literal("Configure vanilla Minecraft food items. Each food can be individually enabled/disabled and customized.")
+                Text.literal("Configure vanilla Minecraft food items.")
         ).build());
 
-        // Group foods by category
-        List<String> fruits = List.of("apple", "melon_slice", "sweet_berries", "glow_berries", "chorus_fruit");
-        List<String> vegetables = List.of("carrot", "potato", "baked_potato", "beetroot", "golden_carrot");
-        List<String> rawMeat = List.of("beef", "porkchop", "chicken", "mutton", "rabbit", "cod", "salmon", "tropical_fish");
-        List<String> cookedMeat = List.of("cooked_beef", "cooked_porkchop", "cooked_chicken", "cooked_mutton", "cooked_rabbit", "cooked_cod", "cooked_salmon");
-        List<String> special = List.of("golden_apple", "enchanted_golden_apple", "pufferfish", "rotten_flesh", "spider_eye", "poisonous_potato");
-        List<String> meals = List.of("bread", "cookie", "pumpkin_pie", "beetroot_soup", "mushroom_stew", "rabbit_stew", "suspicious_stew", "dried_kelp", "honey_bottle");
-
-        addFoodGroup(vanillaFood, entryBuilder, config, "Fruits & Berries", fruits);
-        addFoodGroup(vanillaFood, entryBuilder, config, "Vegetables", vegetables);
-        addFoodGroup(vanillaFood, entryBuilder, config, "Raw Meat & Fish", rawMeat);
-        addFoodGroup(vanillaFood, entryBuilder, config, "Cooked Meat & Fish", cookedMeat);
-        addFoodGroup(vanillaFood, entryBuilder, config, "Prepared Meals", meals);
-        addFoodGroup(vanillaFood, entryBuilder, config, "Special Items", special);
-    }
-
-    private void addFoodGroup(ConfigCategory category, ConfigEntryBuilder entryBuilder, ModConfig config,
-                              String groupName, List<String> items) {
-        category.addEntry(entryBuilder.startTextDescription(
-                Text.literal("§6§l" + groupName)
-        ).build());
-
-        for (String itemId : items) {
-            if (config.vanillaFoods.containsKey(itemId)) {
-                ModConfig.VanillaFoodEntry entry = config.vanillaFoods.get(itemId);
-                addVanillaFoodEntry(category, entryBuilder, itemId, entry);
-            }
-        }
+        config.vanillaFoods.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> addVanillaFoodEntry(vanillaFood, entryBuilder, entry.getKey(), entry.getValue()));
     }
 
     private void addVanillaFoodEntry(ConfigCategory category, ConfigEntryBuilder entryBuilder,
                                      String itemId, ModConfig.VanillaFoodEntry entry) {
         String displayName = formatItemName(itemId);
 
-        // Enabled toggle
+
+        category.addEntry(entryBuilder.startTextDescription(
+                Text.literal("§6" + displayName)
+        ).build());
+
         category.addEntry(entryBuilder.startBooleanToggle(
-                        Text.literal("  Enable " + displayName),
+                        Text.literal("  Enable"),
                         entry.enabled)
                 .setDefaultValue(true)
                 .setSaveConsumer(newValue -> entry.enabled = newValue)
                 .build());
 
-        // Eating time
         category.addEntry(entryBuilder.startIntField(
-                        Text.literal("    ├ Eating Time (ticks)"),
+                        Text.literal("  Eating Time (ticks)"),
                         entry.eatingTime)
                 .setDefaultValue(32)
                 .setMin(1)
@@ -241,9 +216,8 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(newValue -> entry.eatingTime = newValue)
                 .build());
 
-        // Hunger
         category.addEntry(entryBuilder.startIntField(
-                        Text.literal("    ├ Hunger"),
+                        Text.literal("  Hunger"),
                         entry.hunger)
                 .setDefaultValue(4)
                 .setMin(0)
@@ -251,9 +225,8 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(newValue -> entry.hunger = newValue)
                 .build());
 
-        // Saturation
         category.addEntry(entryBuilder.startFloatField(
-                        Text.literal("    └ Saturation"),
+                        Text.literal("  Saturation"),
                         entry.saturation)
                 .setDefaultValue(0.5f)
                 .setMin(0.0f)
@@ -269,7 +242,6 @@ public class ModMenuIntegration implements ModMenuApi {
                 Text.literal("Configure how modded foods are handled. Fallback logic automatically categorizes foods based on saturation.")
         ).build());
 
-        // Fallback logic section
         moddedFood.addEntry(entryBuilder.startBooleanToggle(
                         Text.literal("Enable Fallback Logic"),
                         config.moddedFoodDefaults.enableFallbackLogic)
@@ -281,7 +253,7 @@ public class ModMenuIntegration implements ModMenuApi {
         moddedFood.addEntry(entryBuilder.startFloatField(
                         Text.literal("Saturation Scaling Multiplier"),
                         config.moddedFoodDefaults.saturationScalingMultiplier)
-                .setDefaultValue(1.0f)
+                .setDefaultValue(1.5f)
                 .setMin(0.1f)
                 .setMax(5.0f)
                 .setTooltip(Text.literal("High saturation foods give proportionally more saturation"))
@@ -370,7 +342,6 @@ public class ModMenuIntegration implements ModMenuApi {
                 .setSaveConsumer(newValue -> config.moddedFoodDefaults.maxEatingTime = newValue)
                 .build());
 
-        // Registered modded foods section
         moddedFood.addEntry(entryBuilder.startTextDescription(
                 Text.literal("§6§lRegistered Modded Foods")
         ).build());

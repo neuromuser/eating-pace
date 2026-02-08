@@ -56,7 +56,6 @@ public class CustomFoodComponent {
         return this;
     }
 
-    // Getters
     public int getHunger() { return hunger; }
     public float getSaturation() { return saturation; }
     public boolean isMeat() { return meat; }
