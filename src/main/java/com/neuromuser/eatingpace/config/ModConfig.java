@@ -168,7 +168,7 @@ public class ModConfig {
         public float lowSaturationThreshold = 0.4f;
 
         @SerializedName("mealEatingTime")
-        public int mealEatingTime = 80; 
+        public int mealEatingTime = 120;
 
         @SerializedName("normalEatingTime")
         public int normalEatingTime = 32; 
@@ -177,10 +177,10 @@ public class ModConfig {
         public int snackEatingTime = 16; 
 
         @SerializedName("minEatingTime")
-        public int minEatingTime = 10; 
+        public int minEatingTime = 8;
 
         @SerializedName("maxEatingTime")
-        public int maxEatingTime = 100; 
+        public int maxEatingTime = 150;
 
         @SerializedName("saturationScalingMultiplier")
         public float saturationScalingMultiplier = 1.5f;
