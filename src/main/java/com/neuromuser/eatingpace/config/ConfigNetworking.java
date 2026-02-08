@@ -21,7 +21,4 @@ public class ConfigNetworking {
         ServerPlayNetworking.send(player, SYNC_ID, buf);
     }
 
-    public static Identifier getSyncId() {
-        return SYNC_ID;
-    }
 }
