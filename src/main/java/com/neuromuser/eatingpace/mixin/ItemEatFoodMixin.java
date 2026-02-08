@@ -1,16 +1,21 @@
 package com.neuromuser.eatingpace.mixin;
 
 import com.neuromuser.eatingpace.config.ConfigManager;
-import com.neuromuser.eatingpace.config.CustomFoodComponent;
-import com.neuromuser.eatingpace.config.ModifiedFoods;
 import net.minecraft.component.type.FoodComponent;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.item.Item;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
+import java.util.Optional;
+
 @Mixin(Item.class)
-public class ItemEatFoodMixin {
+public abstract class ItemEatFoodMixin {
 
     @ModifyArg(
             method = "finishUsing",
@@ -21,15 +26,44 @@ public class ItemEatFoodMixin {
             index = 2
     )
     private FoodComponent modifyFoodComponent(FoodComponent original) {
-        if (!ConfigManager.get().enableCustomFoodValues) {
+        if (!ConfigManager.get().general.enableMod) {
             return original;
         }
 
         Item thisItem = (Item) (Object) this;
-        CustomFoodComponent customFood = ModifiedFoods.getCustomFood(thisItem);
+        ConfigManager.FoodProperties props = ConfigManager.getFoodProperties(thisItem);
 
-        if (customFood != null) {
-            return customFood.toVanillaComponent();
+        if (props != null) {
+            FoodComponent.Builder builder = new FoodComponent.Builder()
+                    .nutrition(props.hunger)
+                    .saturationModifier(props.saturation);
+
+            if (props.alwaysEdible) builder.alwaysEdible();
+            if (props.isSnack) builder.snack();
+
+            if (props.effects != null && !props.effects.isEmpty()) {
+                for (var entry : props.effects.entrySet()) {
+                    Identifier id = Identifier.tryParse(entry.getKey());
+                    if (id != null) {
+                        var effectRegistry = Registries.STATUS_EFFECT;
+                        Optional<RegistryEntry.Reference<net.minecraft.entity.effect.StatusEffect>> effectEntry =
+                                effectRegistry.getReadOnlyWrapper().getOptional(RegistryKey.of(effectRegistry.getKey(), id));
+
+                        if (effectEntry.isPresent()) {
+                            StatusEffectInstance instance = new StatusEffectInstance(
+                                    effectEntry.get(),
+                                    entry.getValue().duration,
+                                    entry.getValue().amplifier,
+                                    false,
+                                    false
+                            );
+                            builder.statusEffect(instance, entry.getValue().chance);
+                        }
+                    }
+                }
+            }
+
+            return builder.build();
         }
 
         return original;

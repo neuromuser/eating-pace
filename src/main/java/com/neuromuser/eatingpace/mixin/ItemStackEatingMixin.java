@@ -2,6 +2,7 @@ package com.neuromuser.eatingpace.mixin;
 
 import com.neuromuser.eatingpace.EatingPace;
 import com.neuromuser.eatingpace.config.ConfigManager;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -15,7 +16,7 @@ public class ItemStackEatingMixin {
     private void modifyMaxUseTime(CallbackInfoReturnable<Integer> cir) {
         ItemStack stack = (ItemStack)(Object)this;
 
-        if (!stack.isFood()) {
+        if (!stack.contains(DataComponentTypes.FOOD)) {
             return;
         }
 
