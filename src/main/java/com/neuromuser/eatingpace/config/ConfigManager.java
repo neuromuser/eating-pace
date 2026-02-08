@@ -119,24 +119,37 @@ public class ConfigManager {
             return null;
         }
 
+        FoodProperties props = null;
         String itemId = getItemId(item);
 
         if (config.vanillaFoods.containsKey(itemId)) {
             ModConfig.VanillaFoodEntry entry = config.vanillaFoods.get(itemId);
             if (entry.enabled) {
-                return new FoodProperties(entry);
+                props = new FoodProperties(entry);
             }
         }
 
         if (config.moddedFoods.containsKey(itemId)) {
             ModConfig.ModdedFoodEntry entry = config.moddedFoods.get(itemId);
             if (entry.enabled) {
-                return new FoodProperties(entry);
+                props = new FoodProperties(entry);
             }
         }
 
         if (config.moddedFoodDefaults.enableFallbackLogic && item.getComponents().contains(DataComponentTypes.FOOD)) {
             return getFallbackProperties(item, config);
+        }
+
+        if (props != null) {
+            return new FoodProperties(
+                    props.eatingTime,
+                    (int)(props.hunger * config.general.globalHungerMultiplier),
+                    props.saturation * config.general.globalSaturationMultiplier,
+                    props.isMeat,
+                    props.isSnack,
+                    props.alwaysEdible,
+                    props.effects
+            );
         }
 
         return null;
@@ -177,7 +190,8 @@ public class ConfigManager {
                     scaledSaturation * config.general.globalSaturationMultiplier,
                     false,
                     foodComponent.eatSeconds() <= 0.8F,
-                    foodComponent.canAlwaysEat()
+                    foodComponent.canAlwaysEat(),
+                    new java.util.HashMap<>()
             );
         } finally {
             isProcessingFoodComponent.set(false);
@@ -218,7 +232,6 @@ public class ConfigManager {
         return 32;
     }
 
-
     public static class FoodProperties {
         public final int eatingTime;
         public final int hunger;
@@ -229,9 +242,11 @@ public class ConfigManager {
         public final java.util.Map<String, ModConfig.EffectEntry> effects;
 
         public FoodProperties(ModConfig.VanillaFoodEntry entry) {
+            ModConfig config = get();
             this.eatingTime = entry.eatingTime;
-            this.hunger = entry.hunger;
-            this.saturation = entry.saturation;
+            // Applying multipliers here fixes the Vanilla issue
+            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
+            this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;
             this.alwaysEdible = entry.alwaysEdible;
@@ -239,9 +254,10 @@ public class ConfigManager {
         }
 
         public FoodProperties(ModConfig.ModdedFoodEntry entry) {
+            ModConfig config = get();
             this.eatingTime = entry.eatingTime;
-            this.hunger = entry.hunger;
-            this.saturation = entry.saturation;
+            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
+            this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;
             this.alwaysEdible = entry.alwaysEdible;
@@ -249,14 +265,15 @@ public class ConfigManager {
         }
 
         public FoodProperties(int eatingTime, int hunger, float saturation,
-                              boolean isMeat, boolean isSnack, boolean alwaysEdible) {
+                              boolean isMeat, boolean isSnack, boolean alwaysEdible,
+                              java.util.Map<String, ModConfig.EffectEntry> effects) {
             this.eatingTime = eatingTime;
             this.hunger = hunger;
             this.saturation = saturation;
             this.isMeat = isMeat;
             this.isSnack = isSnack;
             this.alwaysEdible = alwaysEdible;
-            this.effects = new java.util.HashMap<>();
+            this.effects = effects != null ? effects : new java.util.HashMap<>();
         }
     }
 }
