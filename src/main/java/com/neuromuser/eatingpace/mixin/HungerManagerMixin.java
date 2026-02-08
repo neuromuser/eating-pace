@@ -14,23 +14,16 @@ import org.spongepowered.asm.mixin.injection.invoke.arg.Args;
 @Mixin(HungerManager.class)
 public abstract class HungerManagerMixin {
     @Shadow private float saturationLevel;
-    @Shadow private int foodLevel;
 
-    protected HungerManagerMixin(int foodLevel) {
-        this.foodLevel = foodLevel;
-    }
-
-    @ModifyArgs(method = "addInternal", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/util/math/MathHelper;clamp(FFF)F"))
-    private void modifySaturationClamp(Args args) {
-
-        float customCap = ConfigManager.get().saturationCap;
-        args.set(2, customCap);
+    @ModifyArg(method = "add", at = @At(value = "INVOKE",
+            target = "Ljava/lang/Math;min(FF)F"), index = 1)
+    private float modifySaturationCap(float originalCap) {
+        return ConfigManager.get().general.saturationCap;
     }
 
     @Inject(method = "setFoodLevel", at = @At("TAIL"))
     private void onSetFoodLevel(int foodLevel, CallbackInfo ci) {
-        float cap = ConfigManager.get().saturationCap;
+        float cap = ConfigManager.get().general.saturationCap;
         if (this.saturationLevel > cap) {
             this.saturationLevel = cap;
         }
@@ -38,6 +31,6 @@ public abstract class HungerManagerMixin {
 
     @ModifyReturnValue(method = "getSaturationLevel", at = @At("RETURN"))
     private float ensureWithinCap(float original) {
-        return Math.min(original, ConfigManager.get().saturationCap);
+        return Math.min(original, ConfigManager.get().general.saturationCap);
     }
 }

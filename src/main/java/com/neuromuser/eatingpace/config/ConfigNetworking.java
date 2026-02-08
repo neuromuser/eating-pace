@@ -18,7 +18,4 @@ public class ConfigNetworking {
         ServerPlayNetworking.send(player, new ConfigSyncPayload(ConfigManager.toJson()));
     }
 
-    public static Identifier getSyncId() {
-        return SYNC_ID;
-    }
 }
