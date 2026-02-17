@@ -2,10 +2,8 @@ package com.neuromuser.eatingpace.config;
 
 import net.minecraft.component.type.FoodComponent;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.player.HungerConstants;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class CustomFoodComponent {
     private final int hunger;

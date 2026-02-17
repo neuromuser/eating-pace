@@ -3,6 +3,7 @@
   "package": "com.neuromuser.eatingpace.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "FoodComponentMixin",
     "HungerManagerMixin",
     "ItemEatFoodMixin",
     "ItemStackEatingMixin",

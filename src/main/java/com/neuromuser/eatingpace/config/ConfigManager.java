@@ -4,6 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.FoodComponent;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
@@ -139,7 +141,7 @@ public class ConfigManager {
             }
         }
 
-        if (config.moddedFoodDefaults.enableFallbackLogic && item.isFood()) {
+        if (config.moddedFoodDefaults.enableFallbackLogic) {
             return getFallbackProperties(item, config);
         }
 
@@ -153,15 +155,15 @@ public class ConfigManager {
 
         isProcessingFoodComponent.set(true);
         try {
-            var foodComponent = item.getFoodComponent();
+            FoodComponent foodComponent = item.getComponents().get(DataComponentTypes.FOOD);
             if (foodComponent == null) {
                 return null;
             }
 
-            float baseSaturation = foodComponent.getSaturationModifier();
-            int baseHunger = foodComponent.getHunger();
+            float baseSaturation = foodComponent.saturation();
+            int baseHunger = foodComponent.nutrition();
 
-            int eatingTime = (int)(baseHunger * 6 + baseSaturation * 60);
+            int eatingTime = (int) (baseHunger * 6 + baseSaturation * 60);
             eatingTime = Math.max(config.moddedFoodDefaults.minEatingTime,
                     Math.min(config.moddedFoodDefaults.maxEatingTime, eatingTime));
 
@@ -170,11 +172,11 @@ public class ConfigManager {
 
             return new FoodProperties(
                     eatingTime,
-                    (int)(baseHunger * config.general.globalHungerMultiplier),
+                    (int) (baseHunger * config.general.globalHungerMultiplier),
                     scaledSaturation,
-                    foodComponent.isMeat(),
-                    foodComponent.isSnack(),
-                    foodComponent.isAlwaysEdible(),
+                    false, 
+                    foodComponent.eatSeconds() < 1.0f, 
+                    foodComponent.canAlwaysEat(),
                     new java.util.HashMap<>()
             );
         } finally {
@@ -191,18 +193,18 @@ public class ConfigManager {
     }
 
     public static int getEatingTime(ItemStack stack) {
-        if (!stack.isFood()) {
+        if (!stack.contains(DataComponentTypes.FOOD)) {
             return 32;
         }
 
         FoodProperties props = getFoodProperties(stack.getItem());
         if (props != null) {
-            return (int)(props.eatingTime * get().general.globalEatingSpeedMultiplier);
+            return (int) (props.eatingTime * get().general.globalEatingSpeedMultiplier);
         }
 
-        var foodComponent = stack.getItem().getFoodComponent();
+        FoodComponent foodComponent = stack.get(DataComponentTypes.FOOD);
         if (foodComponent != null) {
-            return foodComponent.isSnack() ? 16 : 32;
+            return (int) (foodComponent.eatSeconds() * 20);
         }
         return 32;
     }
@@ -218,7 +220,7 @@ public class ConfigManager {
 
         public FoodProperties(ModConfig.VanillaFoodEntry entry, ModConfig config) {
             this.eatingTime = entry.eatingTime;
-            this.hunger = (int)(entry.hunger * config.general.globalHungerMultiplier);
+            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
             this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;
@@ -228,7 +230,7 @@ public class ConfigManager {
 
         public FoodProperties(ModConfig.ModdedFoodEntry entry, ModConfig config) {
             this.eatingTime = entry.eatingTime;
-            this.hunger = (int)(entry.hunger * config.general.globalHungerMultiplier);
+            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
             this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;
