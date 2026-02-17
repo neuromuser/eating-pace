@@ -12,8 +12,6 @@ import net.minecraft.util.Identifier;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -49,7 +47,13 @@ public class ConfigManager {
                 String json = Files.readString(path);
                 ModConfig loaded = GSON.fromJson(json, ModConfig.class);
                 if (loaded != null) {
-                    clientConfig = loaded;
+                    if (loaded.configVersion < ModConfig.CURRENT_VERSION) {
+                        System.out.println("[EatingPace] Config version outdated (v" + loaded.configVersion + " -> v" + ModConfig.CURRENT_VERSION + "), resetting to defaults.");
+                        clientConfig = new ModConfig();
+                        save(path);
+                    } else {
+                        clientConfig = loaded;
+                    }
                 } else {
                     System.err.println("Failed to parse config, using defaults");
                     clientConfig = new ModConfig();
@@ -112,7 +116,6 @@ public class ConfigManager {
         }
     }
 
-
     public static FoodProperties getFoodProperties(Item item) {
         ModConfig config = get();
 
@@ -120,37 +123,24 @@ public class ConfigManager {
             return null;
         }
 
-        FoodProperties props = null;
         String itemId = getItemId(item);
 
         if (config.vanillaFoods.containsKey(itemId)) {
             ModConfig.VanillaFoodEntry entry = config.vanillaFoods.get(itemId);
             if (entry.enabled) {
-                props = new FoodProperties(entry);
+                return new FoodProperties(entry, config);
             }
         }
 
         if (config.moddedFoods.containsKey(itemId)) {
             ModConfig.ModdedFoodEntry entry = config.moddedFoods.get(itemId);
             if (entry.enabled) {
-                props = new FoodProperties(entry);
+                return new FoodProperties(entry, config);
             }
         }
 
         if (config.moddedFoodDefaults.enableFallbackLogic && item.isFood()) {
             return getFallbackProperties(item, config);
-        }
-
-        if (props != null) {
-            return new FoodProperties(
-                    props.eatingTime,
-                    (int)(props.hunger * config.general.globalHungerMultiplier),
-                    props.saturation * config.general.globalSaturationMultiplier,
-                    props.isMeat,
-                    props.isSnack,
-                    props.alwaysEdible,
-                    props.effects
-            );
         }
 
         return null;
@@ -171,24 +161,17 @@ public class ConfigManager {
             float baseSaturation = foodComponent.getSaturationModifier();
             int baseHunger = foodComponent.getHunger();
 
-            int eatingTime;
-            if (baseSaturation >= config.moddedFoodDefaults.highSaturationThreshold) {
-                eatingTime = config.moddedFoodDefaults.mealEatingTime;
-            } else if (baseSaturation <= config.moddedFoodDefaults.lowSaturationThreshold) {
-                eatingTime = config.moddedFoodDefaults.snackEatingTime;
-            } else {
-                eatingTime = config.moddedFoodDefaults.normalEatingTime;
-            }
-
+            int eatingTime = (int)(baseHunger * 6 + baseSaturation * 60);
             eatingTime = Math.max(config.moddedFoodDefaults.minEatingTime,
                     Math.min(config.moddedFoodDefaults.maxEatingTime, eatingTime));
 
-            float scaledSaturation = baseSaturation * config.moddedFoodDefaults.saturationScalingMultiplier;
+            float scaledSaturation = baseSaturation * config.moddedFoodDefaults.saturationScalingMultiplier
+                    * config.general.globalSaturationMultiplier;
 
             return new FoodProperties(
                     eatingTime,
                     (int)(baseHunger * config.general.globalHungerMultiplier),
-                    scaledSaturation * config.general.globalSaturationMultiplier,
+                    scaledSaturation,
                     foodComponent.isMeat(),
                     foodComponent.isSnack(),
                     foodComponent.isAlwaysEdible(),
@@ -202,14 +185,14 @@ public class ConfigManager {
     private static String getItemId(Item item) {
         Identifier id = Registries.ITEM.getId(item);
         if (id.getNamespace().equals("minecraft")) {
-            return id.getPath(); 
+            return id.getPath();
         }
-        return id.toString(); 
+        return id.toString();
     }
 
     public static int getEatingTime(ItemStack stack) {
         if (!stack.isFood()) {
-            return 32; 
+            return 32;
         }
 
         FoodProperties props = getFoodProperties(stack.getItem());
@@ -217,18 +200,9 @@ public class ConfigManager {
             return (int)(props.eatingTime * get().general.globalEatingSpeedMultiplier);
         }
 
-        return getVanillaEatingTime(stack);
-    }
-
-    private static int getVanillaEatingTime(ItemStack stack) {
-        try {
-            if (isProcessingFoodComponent.get()) {
-                var foodComponent = stack.getItem().getFoodComponent();
-                if (foodComponent != null) {
-                    return foodComponent.isSnack() ? 16 : 32;
-                }
-            }
-        } catch (Exception e) {
+        var foodComponent = stack.getItem().getFoodComponent();
+        if (foodComponent != null) {
+            return foodComponent.isSnack() ? 16 : 32;
         }
         return 32;
     }
@@ -242,11 +216,9 @@ public class ConfigManager {
         public final boolean alwaysEdible;
         public final java.util.Map<String, ModConfig.EffectEntry> effects;
 
-        public FoodProperties(ModConfig.VanillaFoodEntry entry) {
-            ModConfig config = get();
+        public FoodProperties(ModConfig.VanillaFoodEntry entry, ModConfig config) {
             this.eatingTime = entry.eatingTime;
-            // Applying multipliers here fixes the Vanilla issue
-            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
+            this.hunger = (int)(entry.hunger * config.general.globalHungerMultiplier);
             this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;
@@ -254,10 +226,9 @@ public class ConfigManager {
             this.effects = entry.effects;
         }
 
-        public FoodProperties(ModConfig.ModdedFoodEntry entry) {
-            ModConfig config = get();
+        public FoodProperties(ModConfig.ModdedFoodEntry entry, ModConfig config) {
             this.eatingTime = entry.eatingTime;
-            this.hunger = (int) (entry.hunger * config.general.globalHungerMultiplier);
+            this.hunger = (int)(entry.hunger * config.general.globalHungerMultiplier);
             this.saturation = entry.saturation * config.general.globalSaturationMultiplier;
             this.isMeat = entry.isMeat;
             this.isSnack = entry.isSnack;

@@ -1,7 +1,6 @@
 package com.neuromuser.eatingpace;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.neuromuser.eatingpace.config.ConfigManager;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -17,19 +16,37 @@ public class EatingProgressHud implements HudRenderCallback {
     private static final int CIRCLE_SEGMENTS = 40;
     private static final int OUTLINE_WIDTH = 1;
 
+    private int cachedMaxTicks = 0;
+    private ItemStack lastEatingItem = ItemStack.EMPTY;
+
     @Override
     public void onHudRender(DrawContext drawContext, float tickDelta) {
         MinecraftClient client = MinecraftClient.getInstance();
         PlayerEntity player = client.player;
 
-        if (player == null || !player.isUsingItem()) return;
+        if (player == null || !player.isUsingItem()) {
+            cachedMaxTicks = 0;
+            lastEatingItem = ItemStack.EMPTY;
+            return;
+        }
 
         ItemStack usingItem = player.getActiveItem();
-        if (!usingItem.isFood()) return;
+        if (!usingItem.isFood()) {
+            cachedMaxTicks = 0;
+            lastEatingItem = ItemStack.EMPTY;
+            return;
+        }
 
-        int maxUseTicks = calculateMaxUseTime(usingItem);
-        int usedTicks = player.getItemUseTimeLeft();
-        float progress = 1.0f - ((float) usedTicks / maxUseTicks);
+        int timeLeft = player.getItemUseTimeLeft();
+
+        if (!ItemStack.areItemsEqual(usingItem, lastEatingItem) || timeLeft > cachedMaxTicks) {
+            cachedMaxTicks = timeLeft;
+            lastEatingItem = usingItem;
+        }
+
+        if (cachedMaxTicks <= 0) return;
+
+        float progress = 1.0f - ((float) timeLeft / cachedMaxTicks);
 
         int screenWidth = client.getWindow().getScaledWidth();
         int screenHeight = client.getWindow().getScaledHeight();
@@ -144,9 +161,5 @@ public class EatingProgressHud implements HudRenderCallback {
                     0
             ).color(220, 220, 220, 220).next();
         }
-    }
-
-    private int calculateMaxUseTime(ItemStack stack) {
-        return ConfigManager.getEatingTime(stack);
     }
 }

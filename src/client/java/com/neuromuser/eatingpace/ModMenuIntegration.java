@@ -11,8 +11,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 
 public class ModMenuIntegration implements ModMenuApi {
@@ -185,15 +183,18 @@ public class ModMenuIntegration implements ModMenuApi {
                 Text.literal("Configure vanilla Minecraft food items.")
         ).build());
 
+        ModConfig defaults = new ModConfig();
+
         config.vanillaFoods.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> addVanillaFoodEntry(vanillaFood, entryBuilder, entry.getKey(), entry.getValue()));
+                .forEach(entry -> addVanillaFoodEntry(vanillaFood, entryBuilder, entry.getKey(), entry.getValue(), defaults));
     }
 
     private void addVanillaFoodEntry(ConfigCategory category, ConfigEntryBuilder entryBuilder,
-                                     String itemId, ModConfig.VanillaFoodEntry entry) {
+                                     String itemId, ModConfig.VanillaFoodEntry entry, ModConfig defaults) {
         String displayName = formatItemName(itemId);
 
+        ModConfig.VanillaFoodEntry defaultEntry = defaults.vanillaFoods.getOrDefault(itemId, new ModConfig.VanillaFoodEntry());
 
         category.addEntry(entryBuilder.startTextDescription(
                 Text.literal("§6" + displayName)
@@ -209,7 +210,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startIntField(
                         Text.literal("  Eating Time (ticks)"),
                         entry.eatingTime)
-                .setDefaultValue(32)
+                .setDefaultValue(defaultEntry.eatingTime)
                 .setMin(1)
                 .setMax(500)
                 .setTooltip(Text.literal("Time to eat (20 ticks = 1 second)"))
@@ -219,7 +220,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startIntField(
                         Text.literal("  Hunger"),
                         entry.hunger)
-                .setDefaultValue(4)
+                .setDefaultValue(defaultEntry.hunger)
                 .setMin(0)
                 .setMax(100)
                 .setSaveConsumer(newValue -> entry.hunger = newValue)
@@ -228,7 +229,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startFloatField(
                         Text.literal("  Saturation"),
                         entry.saturation)
-                .setDefaultValue(0.5f)
+                .setDefaultValue(defaultEntry.saturation)
                 .setMin(0.0f)
                 .setMax(5.0f)
                 .setSaveConsumer(newValue -> entry.saturation = newValue)
@@ -253,69 +254,11 @@ public class ModMenuIntegration implements ModMenuApi {
         moddedFood.addEntry(entryBuilder.startFloatField(
                         Text.literal("Saturation Scaling Multiplier"),
                         config.moddedFoodDefaults.saturationScalingMultiplier)
-                .setDefaultValue(1.5f)
+                .setDefaultValue(2.0f)
                 .setMin(0.1f)
                 .setMax(5.0f)
-                .setTooltip(Text.literal("High saturation foods give proportionally more saturation"))
+                .setTooltip(Text.literal("Multiplier applied to modded food saturation (default 2x)"))
                 .setSaveConsumer(newValue -> config.moddedFoodDefaults.saturationScalingMultiplier = newValue)
-                .build());
-
-        moddedFood.addEntry(entryBuilder.startTextDescription(
-                Text.literal("§6Categorization Thresholds")
-        ).build());
-
-        moddedFood.addEntry(entryBuilder.startFloatField(
-                        Text.literal("High Saturation Threshold"),
-                        config.moddedFoodDefaults.highSaturationThreshold)
-                .setDefaultValue(0.8f)
-                .setMin(0.0f)
-                .setMax(2.0f)
-                .setTooltip(Text.literal("Foods above this are 'Meals' (slower eating)"))
-                .setSaveConsumer(newValue -> config.moddedFoodDefaults.highSaturationThreshold = newValue)
-                .build());
-
-        moddedFood.addEntry(entryBuilder.startFloatField(
-                        Text.literal("Low Saturation Threshold"),
-                        config.moddedFoodDefaults.lowSaturationThreshold)
-                .setDefaultValue(0.4f)
-                .setMin(0.0f)
-                .setMax(2.0f)
-                .setTooltip(Text.literal("Foods below this are 'Snacks' (faster eating)"))
-                .setSaveConsumer(newValue -> config.moddedFoodDefaults.lowSaturationThreshold = newValue)
-                .build());
-
-        moddedFood.addEntry(entryBuilder.startTextDescription(
-                Text.literal("§6Default Eating Times")
-        ).build());
-
-        moddedFood.addEntry(entryBuilder.startIntField(
-                        Text.literal("Meal Eating Time (ticks)"),
-                        config.moddedFoodDefaults.mealEatingTime)
-                .setDefaultValue(120)
-                .setMin(1)
-                .setMax(500)
-                .setTooltip(Text.literal("High saturation foods (e.g., steak)"))
-                .setSaveConsumer(newValue -> config.moddedFoodDefaults.mealEatingTime = newValue)
-                .build());
-
-        moddedFood.addEntry(entryBuilder.startIntField(
-                        Text.literal("Normal Eating Time (ticks)"),
-                        config.moddedFoodDefaults.normalEatingTime)
-                .setDefaultValue(32)
-                .setMin(1)
-                .setMax(500)
-                .setTooltip(Text.literal("Medium saturation foods"))
-                .setSaveConsumer(newValue -> config.moddedFoodDefaults.normalEatingTime = newValue)
-                .build());
-
-        moddedFood.addEntry(entryBuilder.startIntField(
-                        Text.literal("Snack Eating Time (ticks)"),
-                        config.moddedFoodDefaults.snackEatingTime)
-                .setDefaultValue(16)
-                .setMin(1)
-                .setMax(500)
-                .setTooltip(Text.literal("Low saturation foods (e.g., cookies)"))
-                .setSaveConsumer(newValue -> config.moddedFoodDefaults.snackEatingTime = newValue)
                 .build());
 
         moddedFood.addEntry(entryBuilder.startTextDescription(
@@ -335,10 +278,10 @@ public class ModMenuIntegration implements ModMenuApi {
         moddedFood.addEntry(entryBuilder.startIntField(
                         Text.literal("Maximum Eating Time (ticks)"),
                         config.moddedFoodDefaults.maxEatingTime)
-                .setDefaultValue(150)
-                .setMin(50)
+                .setDefaultValue(100)
+                .setMin(8)
                 .setMax(500)
-                .setTooltip(Text.literal("No food can take longer than this to eat (5.0s)"))
+                .setTooltip(Text.literal("No food can take longer than this to eat (5.0s at 100)"))
                 .setSaveConsumer(newValue -> config.moddedFoodDefaults.maxEatingTime = newValue)
                 .build());
 
@@ -369,7 +312,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startIntField(
                         Text.literal("    ├ Eating Time (ticks)"),
                         entry.eatingTime)
-                .setDefaultValue(32)
+                .setDefaultValue(entry.eatingTime)
                 .setMin(1)
                 .setMax(200)
                 .setSaveConsumer(newValue -> entry.eatingTime = newValue)
@@ -378,7 +321,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startIntField(
                         Text.literal("    ├ Hunger"),
                         entry.hunger)
-                .setDefaultValue(4)
+                .setDefaultValue(entry.hunger)
                 .setMin(0)
                 .setMax(100)
                 .setSaveConsumer(newValue -> entry.hunger = newValue)
@@ -387,7 +330,7 @@ public class ModMenuIntegration implements ModMenuApi {
         category.addEntry(entryBuilder.startFloatField(
                         Text.literal("    └ Saturation"),
                         entry.saturation)
-                .setDefaultValue(0.5f)
+                .setDefaultValue(entry.saturation)
                 .setMin(0.0f)
                 .setMax(5.0f)
                 .setSaveConsumer(newValue -> entry.saturation = newValue)

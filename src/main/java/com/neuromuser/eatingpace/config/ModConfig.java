@@ -6,6 +6,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ModConfig {
+    public static final int CURRENT_VERSION = 1;
+
+    @SerializedName("configVersion")
+    public int configVersion = CURRENT_VERSION;
+
     @SerializedName("general")
     public GeneralConfig general = new GeneralConfig();
 
@@ -49,7 +54,7 @@ public class ModConfig {
         public boolean enabled = true;
 
         @SerializedName("eatingTime")
-        public int eatingTime = 32; 
+        public int eatingTime = 32;
 
         @SerializedName("hunger")
         public int hunger = 4;
@@ -143,7 +148,7 @@ public class ModConfig {
         public float chance = 1.0f;
 
         @SerializedName("duration")
-        public int duration = 100; 
+        public int duration = 100;
 
         @SerializedName("amplifier")
         public int amplifier = 0;
@@ -161,29 +166,14 @@ public class ModConfig {
         @SerializedName("enableFallbackLogic")
         public boolean enableFallbackLogic = true;
 
-        @SerializedName("highSaturationThreshold")
-        public float highSaturationThreshold = 0.8f;
-
-        @SerializedName("lowSaturationThreshold")
-        public float lowSaturationThreshold = 0.4f;
-
-        @SerializedName("mealEatingTime")
-        public int mealEatingTime = 120;
-
-        @SerializedName("normalEatingTime")
-        public int normalEatingTime = 32; 
-
-        @SerializedName("snackEatingTime")
-        public int snackEatingTime = 16; 
+        @SerializedName("saturationScalingMultiplier")
+        public float saturationScalingMultiplier = 2.0f;
 
         @SerializedName("minEatingTime")
         public int minEatingTime = 8;
 
         @SerializedName("maxEatingTime")
-        public int maxEatingTime = 150;
-
-        @SerializedName("saturationScalingMultiplier")
-        public float saturationScalingMultiplier = 1.5f;
+        public int maxEatingTime = 100;
     }
 
     public static class InterruptionConfig {
