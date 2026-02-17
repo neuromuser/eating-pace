@@ -22,9 +22,6 @@ public class ItemStackEatingMixin {
 
         int eatingTime = ConfigManager.getEatingTime(stack);
 
-        EatingPace.LOGGER.debug("Item: {}, Eating Time: {} ticks",
-                stack.getItem().getName().getString(), eatingTime);
-
         cir.setReturnValue(eatingTime);
     }
 }
