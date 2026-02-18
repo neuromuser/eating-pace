@@ -58,10 +58,10 @@ public class EatingProgressHud implements HudRenderCallback {
         MatrixStack matrices = drawContext.getMatrices();
         matrices.push();
 
-        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 255, 80, 0, 80);
+        drawDonutSegment(matrices, centerX, centerY, 0f, 360f, 40, 40, 40, 100);
 
         if (progress > 0f) {
-            drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 240, 255);
+            drawDonutSegment(matrices, centerX, centerY, -90f, -90f + (360f * progress), 80, 255, 80, 240);
         }
 
         drawOutline(matrices, centerX, centerY);
